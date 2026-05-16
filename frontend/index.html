@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GXproject — AI Safety Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            dark: { 900: '#0a0a0f', 800: '#12121a', 700: '#1a1a2e', 600: '#2a2a3e' },
+            accent: { DEFAULT: '#6c5ce7', light: '#a29bfe' },
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .animate-slideUp { animation: slideUp 0.3s ease; }
+    .star { cursor: pointer; transition: color 0.15s; }
+    .star.filled { color: #ffd600; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .pulse-dot { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+  </style>
+</head>
+<body class="bg-dark-900 text-gray-200 font-sans min-h-screen">
+
+  <!-- ── NAVBAR ── -->
+  <nav class="sticky top-0 z-50 bg-dark-800 border-b border-dark-600 px-4 h-14 flex items-center justify-between">
+    <span class="text-lg font-extrabold bg-gradient-to-r from-accent via-accent-light to-emerald-400 bg-clip-text text-transparent cursor-pointer" onclick="navigate('directory')">⚡ GXproject</span>
+    <div class="flex gap-1">
+      <button id="nav-directory" onclick="navigate('directory')"
+        class="nav-btn px-4 py-1.5 rounded-lg text-sm font-medium transition bg-dark-700 text-accent-light">
+        🗂 Directory
+      </button>
+      <button id="nav-incidents" onclick="navigate('incidents')"
+        class="nav-btn px-4 py-1.5 rounded-lg text-sm font-medium transition text-gray-400 hover:text-gray-200">
+        <span class="inline-block w-2 h-2 rounded-full bg-red-500 pulse-dot mr-1"></span>Incidents
+      </button>
+    </div>
+    <div class="flex items-center gap-3">
+      <button onclick="openModal('addModal')" class="text-sm px-3 py-1.5 rounded-lg bg-accent/20 text-accent-light hover:bg-accent/30 transition">+ Add App</button>
+      <div id="authMenu" class="text-sm">
+        <button onclick="openModal('authModal')" class="px-3 py-1.5 rounded-lg border border-dark-500 text-gray-300 hover:text-white transition">Sign In</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════════════════════════
+       PAGE 1 — DIRECTORY
+  ══════════════════════════════════════════ -->
+  <div id="page-directory" class="page active">
+    <!-- Search -->
+    <div class="max-w-xl mx-auto px-4 pt-6 flex gap-2">
+      <input id="searchInput" type="text" placeholder="Search AI apps..."
+        class="flex-1 px-4 py-2.5 bg-dark-800 border border-dark-600 rounded-xl text-gray-200 outline-none focus:border-accent transition">
+      <select id="categoryFilter"
+        class="px-3 py-2.5 bg-dark-800 border border-dark-600 rounded-xl text-gray-200 outline-none cursor-pointer">
+        <option value="">All</option>
+        <option value="health">🏥 Health</option>
+        <option value="productivity">⚡ Productivity</option>
+        <option value="coding">💻 Coding</option>
+        <option value="creative">🎨 Creative</option>
+        <option value="education">📚 Education</option>
+        <option value="finance">💰 Finance</option>
+      </select>
+    </div>
+    <!-- Grid -->
+    <div id="appGrid" class="max-w-6xl mx-auto px-4 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <p class="text-gray-500 col-span-full text-center py-12">Loading...</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       PAGE 2 — INCIDENTS
+  ══════════════════════════════════════════ -->
+  <div id="page-incidents" class="page">
+    <div class="max-w-3xl mx-auto px-4 py-8">
+
+      <!-- Hero -->
+      <div class="mb-6">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="w-2 h-2 rounded-full bg-red-500 pulse-dot"></span>
+          <span class="text-xs font-medium text-red-400 uppercase tracking-wider">Live Feed</span>
+        </div>
+        <h1 class="text-3xl font-extrabold text-white mb-1">AI Harm Incidents</h1>
+        <p class="text-gray-500 text-sm">Real incidents. Named apps. Updated daily. <span class="text-gray-600">No one else tracks this publicly.</span></p>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-3 gap-3 mb-6">
+        <div class="bg-dark-800 border border-dark-600 rounded-xl p-4 text-center">
+          <div class="text-2xl font-bold text-white" id="totalCount">—</div>
+          <div class="text-xs text-gray-500 mt-0.5">Total Incidents</div>
+        </div>
+        <div class="bg-dark-800 border border-dark-600 rounded-xl p-4 text-center">
+          <div class="text-2xl font-bold text-red-400" id="criticalCount">—</div>
+          <div class="text-xs text-gray-500 mt-0.5">Critical</div>
+        </div>
+        <div class="bg-dark-800 border border-dark-600 rounded-xl p-4 text-center">
+          <div class="text-2xl font-bold text-white" id="appsCount">—</div>
+          <div class="text-xs text-gray-500 mt-0.5">Apps Named</div>
+        </div>
+      </div>
+
+      <!-- Report banner -->
+      <div class="flex items-center justify-between bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 mb-5">
+        <p class="text-sm text-red-300"><strong>Seen AI cause harm?</strong> Report it. We verify and publish.</p>
+        <button onclick="openModal('reportModal')"
+          class="text-xs px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition flex-shrink-0 ml-3">
+          Report
+        </button>
+      </div>
+
+      <!-- Filters -->
+      <div class="flex gap-2 mb-4 flex-wrap">
+        <input id="incidentSearch" type="text" placeholder="Search incidents..."
+          class="flex-1 min-w-[180px] px-3 py-2 bg-dark-800 border border-dark-600 rounded-xl text-sm text-gray-200 outline-none focus:border-accent">
+        <button class="inc-filter px-3 py-1.5 rounded-xl text-xs border border-dark-600 bg-dark-700 text-accent-light" data-sev="" onclick="filterSev(this)">All</button>
+        <button class="inc-filter px-3 py-1.5 rounded-xl text-xs border border-dark-600 text-gray-400 hover:text-gray-200" data-sev="critical" onclick="filterSev(this)">🔴 Critical</button>
+        <button class="inc-filter px-3 py-1.5 rounded-xl text-xs border border-dark-600 text-gray-400 hover:text-gray-200" data-sev="high" onclick="filterSev(this)">🟠 High</button>
+        <button class="inc-filter px-3 py-1.5 rounded-xl text-xs border border-dark-600 text-gray-400 hover:text-gray-200" data-sev="medium" onclick="filterSev(this)">🟡 Medium</button>
+      </div>
+
+      <!-- Feed -->
+      <div id="incidentFeed" class="space-y-4"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       MODALS (shared)
+  ══════════════════════════════════════════ -->
+
+  <!-- App Detail -->
+  <div id="detailModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-dark-800 border border-dark-600 rounded-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-6 relative animate-slideUp">
+      <button onclick="closeModal('detailModal')" class="absolute top-4 right-4 text-gray-500 hover:text-white text-2xl">×</button>
+      <div id="detailContent"></div>
+    </div>
+  </div>
+
+  <!-- Add App -->
+  <div id="addModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-dark-800 border border-dark-600 rounded-2xl max-w-lg w-full p-6 relative animate-slideUp">
+      <button onclick="closeModal('addModal')" class="absolute top-4 right-4 text-gray-500 hover:text-white text-2xl">×</button>
+      <h2 class="text-xl font-bold mb-4">➕ Register New AI App</h2>
+      <form id="addAppForm" class="space-y-3">
+        <input name="name" required placeholder="App Name *" class="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-xl text-gray-200 outline-none focus:border-accent">
+        <input name="url" type="url" required placeholder="https://..." class="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-xl text-gray-200 outline-none focus:border-accent">
+        <textarea name="description" required rows="2" placeholder="Description *" class="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-xl text-gray-200 outline-none focus:border-accent resize-none"></textarea>
+        <select name="category" class="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-xl text-gray-200 outline-none">
+          <option value="other">Other</option><option value="health">Health</option>
+          <option value="productivity">Productivity</option><option value="coding">Coding</option>
+          <option value="creative">Creative</option><option value="education">Education</option>
+        </select>
+        <label class="flex items-center gap-2 text-sm text-gray-400"><input type="checkbox" name="is_health"> Health/medical app</label>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-accent to-accent-light text-white font-semibold hover:shadow-lg hover:shadow-accent/30 transition">Register App</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Report Incident -->
+  <div id="reportModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-dark-800 border border-dark-600 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 relative animate-slideUp">
+      <button onclick="closeModal('reportModal')" class="absolute top-4 right-4 text-gray-500 hover:text-white text-2xl">×</button>
+      <h2 class="text-xl font-bold mb-4 text-red-400">🚨 Report an AI Harm Incident</h2>
+      <form id="reportForm" class="space-y-3">
+        <input class="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-xl text-gray-200 outline-none focus:border-red-400" name="app_name" required placeholder="App Name *">
+        <input class="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-xl text-gray-200 outline-none focus:border-red-400" name="title" required placeholder="What happened? (headline) *">
+        <textarea class="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-xl text-gray-200 outline-none focus:border-red-400 resize-none" name="description" rows="4" required placeholder="Full description *"></textarea>
+        <div class="grid grid-cols-2 gap-3">
+          <select class="px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-xl text-gray-200 outline-none" name="severity" required>
+            <option value="low">Low</option><option value="medium" selected>Medium</option>
+            <option value="high">High</option><option value="critical">Critical</option>
+          </select>
+          <select class="px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-xl text-gray-200 outline-none" name="category" required>
+            <option value="medical_harm">Medical Harm</option><option value="financial_harm">Financial Harm</option>
+            <option value="privacy_breach">Privacy Breach</option><option value="discrimination">Discrimination</option>
+            <option value="misinformation">Misinformation</option><option value="manipulation">Manipulation</option>
+            <option value="child_safety">Child Safety</option><option value="mental_health">Mental Health</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <input class="px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-xl text-gray-200 outline-none focus:border-red-400" name="affected_users" placeholder="Who was affected?">
+          <input class="px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-xl text-gray-200 outline-none focus:border-red-400" name="region" placeholder="Region">
+        </div>
+        <input class="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-xl text-gray-200 outline-none focus:border-red-400" name="source_url" type="url" placeholder="Source URL (optional)">
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-500 text-white font-semibold">Submit Report</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Incident Detail -->
+  <div id="incDetailModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-dark-800 border border-dark-600 rounded-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-6 relative animate-slideUp">
+      <button onclick="closeModal('incDetailModal')" class="absolute top-4 right-4 text-gray-500 hover:text-white text-2xl">×</button>
+      <div id="incDetailContent"></div>
+    </div>
+  </div>
+
+  <!-- Auth Modal -->
+  <div id="authModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-dark-800 border border-dark-600 rounded-2xl max-w-sm w-full p-6 relative animate-slideUp">
+      <button onclick="closeModal('authModal')" class="absolute top-4 right-4 text-gray-500 hover:text-white text-2xl">×</button>
+      
+      <div id="authForms">
+        <!-- Login Form -->
+        <div id="loginView">
+          <h2 class="text-xl font-bold mb-4">Sign In</h2>
+          <form onsubmit="handleLogin(event)" class="space-y-3">
+            <input type="email" name="email" required placeholder="Email" class="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-xl outline-none focus:border-accent">
+            <input type="password" name="password" required placeholder="Password" class="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-xl outline-none focus:border-accent">
+            <button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-accent to-accent-light text-white font-semibold hover:shadow-lg transition">Sign In</button>
+          </form>
+          <div class="my-4 flex items-center gap-2">
+            <hr class="flex-1 border-dark-600"><span class="text-xs text-gray-500 uppercase">or</span><hr class="flex-1 border-dark-600">
+          </div>
+          <button onclick="alert('Google Auth requires a Google Cloud Client ID to be configured in the backend. Currently running in Email-only mode for MVP.')" class="w-full py-2.5 rounded-xl bg-white text-dark-900 font-semibold flex items-center justify-center gap-2 hover:bg-gray-100 transition">
+            <svg class="w-5 h-5" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            Continue with Google
+          </button>
+          <p class="text-xs text-center text-gray-500 mt-4">Don't have an account? <span onclick="document.getElementById('loginView').classList.add('hidden'); document.getElementById('registerView').classList.remove('hidden');" class="text-accent-light cursor-pointer hover:underline">Register here</span></p>
+        </div>
+        
+        <!-- Register Form -->
+        <div id="registerView" class="hidden">
+          <h2 class="text-xl font-bold mb-4">Create Account</h2>
+          <form onsubmit="handleRegister(event)" class="space-y-3">
+            <input type="text" name="name" required placeholder="Full Name" class="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-xl outline-none focus:border-accent">
+            <input type="email" name="email" required placeholder="Email" class="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-xl outline-none focus:border-accent">
+            <input type="password" name="password" required placeholder="Password" class="w-full px-4 py-2.5 bg-dark-700 border border-dark-600 rounded-xl outline-none focus:border-accent">
+            <button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-accent to-accent-light text-white font-semibold hover:shadow-lg transition">Create Account</button>
+          </form>
+          <p class="text-xs text-center text-gray-500 mt-4">Already have an account? <span onclick="document.getElementById('registerView').classList.add('hidden'); document.getElementById('loginView').classList.remove('hidden');" class="text-accent-light cursor-pointer hover:underline">Sign In</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const API = 'http://localhost:8001/api/v1';
+let currentSev = '';
+
+// ── Authentication ──────────────────────────────
+let token = localStorage.getItem('token');
+let userName = localStorage.getItem('user_name');
+
+function updateAuthUI() {
+  const menu = document.getElementById('authMenu');
+  if (token && userName) {
+    menu.innerHTML = `<span class="text-gray-300 mr-3 text-xs">Hi, ${userName}</span><button onclick="logout()" class="px-3 py-1.5 rounded-lg border border-red-500/50 text-red-400 hover:bg-red-500/10 transition">Logout</button>`;
+  } else {
+    menu.innerHTML = `<button onclick="openModal('authModal')" class="px-3 py-1.5 rounded-lg border border-dark-500 text-gray-300 hover:text-white transition">Sign In</button>`;
+  }
+}
+
+function logout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user_name');
+  token = null; userName = null;
+  updateAuthUI();
+}
+
+function getAuthHeaders() {
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  try {
+    const res = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ email: fd.get('email'), password: fd.get('password') })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail);
+    token = data.access_token;
+    userName = data.user_name;
+    localStorage.setItem('token', token);
+    localStorage.setItem('user_name', userName);
+    updateAuthUI();
+    closeModal('authModal');
+  } catch(err) { alert(err.message); }
+}
+
+async function handleRegister(e) {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  try {
+    const res = await fetch(`${API}/auth/register`, {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)
+    });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.detail);
+    token = d.access_token;
+    userName = d.user_name;
+    localStorage.setItem('token', token);
+    localStorage.setItem('user_name', userName);
+    updateAuthUI();
+    closeModal('authModal');
+  } catch(err) { alert(err.message); }
+}
+
+window.onload = updateAuthUI;
+
+// ── Navigation ──────────────────────────────────
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    b.classList.remove('bg-dark-700','text-accent-light');
+    b.classList.add('text-gray-400');
+  });
+  const btn = document.getElementById(`nav-${page}`);
+  btn.classList.add('bg-dark-700','text-accent-light');
+  btn.classList.remove('text-gray-400');
+  if (page === 'incidents') { loadStats(); loadFeed(); }
+  if (page === 'directory') loadApps();
+}
+
+// ── DIRECTORY ───────────────────────────────────
+async function loadApps(search='', category='') {
+  const p = new URLSearchParams();
+  if (search) p.set('search', search);
+  if (category) p.set('category', category);
+  try {
+    const apps = await (await fetch(`${API}/apps?${p}`)).json();
+    renderApps(apps);
+  } catch {
+    document.getElementById('appGrid').innerHTML = '<p class="text-gray-500 col-span-full text-center py-12">⚠️ Cannot connect. Is server running on port 8001?</p>';
+  }
+}
+
+function renderApps(apps) {
+  const g = document.getElementById('appGrid');
+  if (!apps.length) { g.innerHTML = '<p class="text-gray-500 col-span-full text-center py-12">🔍 No apps found</p>'; return; }
+  g.innerHTML = apps.map(a => `
+    <div onclick="openDetail(${a.id})" class="group bg-dark-700 border border-dark-600 rounded-2xl p-5 cursor-pointer hover:border-accent hover:-translate-y-1 hover:shadow-xl hover:shadow-accent/10 transition-all duration-200 relative overflow-hidden">
+      <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-accent to-accent-light opacity-0 group-hover:opacity-100 transition"></div>
+      <div class="flex justify-between items-start mb-2">
+        <h3 class="font-bold text-lg">${a.name}</h3>
+        <span class="px-2.5 py-0.5 rounded-full text-[0.65rem] font-semibold uppercase tracking-wider ${badgeCls(a.badge)}">${a.badge}</span>
+      </div>
+      <p class="text-gray-500 text-sm mb-3 truncate">${a.url}</p>
+      <div class="flex justify-between items-center text-sm">
+        <span class="bg-dark-800 px-2 py-0.5 rounded-lg text-gray-400">${catIcon(a.category)} ${a.category}</span>
+        <span class="font-bold text-lg ${scoreCls(a.guardian_score)}">${a.guardian_score !== null ? a.guardian_score : '—'}</span>
+      </div>
+    </div>`).join('');
+}
+
+async function openDetail(id) {
+  const [app, ratings] = await Promise.all([
+    fetch(`${API}/apps/${id}`).then(r=>r.json()),
+    fetch(`${API}/apps/${id}/ratings`).then(r=>r.json()),
+  ]);
+  document.getElementById('detailContent').innerHTML = `
+    <h2 class="text-2xl font-bold">${app.name}</h2>
+    <a href="${app.url}" target="_blank" class="text-accent-light text-sm hover:underline">${app.url}</a>
+    <p class="text-gray-400 mt-3 leading-relaxed">${app.description}</p>
+    <div class="grid grid-cols-2 gap-3 my-4">
+      <div class="bg-dark-700 rounded-xl p-3 text-center"><div class="text-xs text-gray-500 mb-1">Score</div><div class="text-2xl font-bold ${scoreCls(app.guardian_score)}">${app.guardian_score ?? '—'}</div></div>
+      <div class="bg-dark-700 rounded-xl p-3 text-center"><div class="text-xs text-gray-500 mb-1">Badge</div><span class="px-3 py-1 rounded-full text-xs font-semibold ${badgeCls(app.badge)}">${app.badge}</span></div>
+      <div class="bg-dark-700 rounded-xl p-3 text-center"><div class="text-xs text-gray-500 mb-1">Ratings</div><div class="text-2xl font-bold">${app.total_ratings}</div></div>
+      <div class="bg-dark-700 rounded-xl p-3 text-center"><div class="text-xs text-gray-500 mb-1">Harm Reports</div><div class="text-2xl font-bold ${app.total_harm_reports > 0 ? 'text-red-400' : 'text-emerald-400'}">${app.total_harm_reports}</div></div>
+    </div>
+    <div class="flex border-b border-dark-600 mb-4">
+      <button onclick="switchTab(event,'rateTab')" class="tab px-4 py-2 text-sm font-medium text-accent-light border-b-2 border-accent">⭐ Rate</button>
+      <button onclick="switchTab(event,'harmTab')" class="tab px-4 py-2 text-sm font-medium text-gray-500 border-b-2 border-transparent">🚨 Direct Report</button>
+      <button onclick="switchTab(event,'reviewsTab')" class="tab px-4 py-2 text-sm font-medium text-gray-500 border-b-2 border-transparent">💬 (${ratings.length})</button>
+    </div>
+    <div id="rateTab" class="tab-panel">
+      <form onsubmit="submitRating(event,${app.id})" class="space-y-3">
+        ${['accuracy','safety','helpfulness','transparency','trust'].map(d=>`
+          <div><label class="text-xs text-gray-500 font-medium">${d[0].toUpperCase()+d.slice(1)}</label>
+          <div class="flex gap-1 mt-1" data-field="${d}">${[1,2,3,4,5].map(i=>`<span class="star text-xl text-dark-600" data-value="${i}" onclick="setStar(this)">★</span>`).join('')}</div></div>`).join('')}
+        <textarea name="review" rows="2" placeholder="Review (optional)" class="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-xl text-gray-200 text-sm outline-none resize-none focus:border-accent"></textarea>
+        <button type="submit" class="w-full py-2 rounded-xl bg-gradient-to-r from-accent to-accent-light text-white font-semibold text-sm">Submit Rating</button>
+      </form>
+    </div>
+    <div id="harmTab" class="tab-panel hidden">
+      <form onsubmit="submitHarm(event,${app.id})" class="space-y-3">
+        <select name="severity" class="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-xl text-gray-200 text-sm outline-none" required>
+          <option value="1">1 — Minor</option><option value="2">2 — Concerning</option><option value="3">3 — Serious</option><option value="4">4 — Dangerous</option><option value="5">5 — Life-threatening</option>
+        </select>
+        <select name="category" class="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-xl text-gray-200 text-sm outline-none" required>
+          <option value="misinformation">Misinformation</option><option value="wrong_medical_advice">Wrong Medical Advice</option><option value="dangerous_suggestion">Dangerous Suggestion</option><option value="manipulation">Manipulation</option><option value="privacy_violation">Privacy Violation</option><option value="bias_discrimination">Bias</option><option value="other">Other</option>
+        </select>
+        <textarea name="description" rows="3" required placeholder="What happened?" class="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-xl text-gray-200 text-sm outline-none resize-none focus:border-accent"></textarea>
+        <button type="submit" class="w-full py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold text-sm transition">🚨 Submit Report</button>
+      </form>
+    </div>
+    <div id="reviewsTab" class="tab-panel hidden">
+      ${ratings.length ? ratings.map(r=>`<div class="bg-dark-700 rounded-xl p-3 mb-2"><div class="flex items-center justify-between"><div class="text-yellow-400 text-sm">${'★'.repeat(Math.round((r.accuracy+r.safety+r.helpfulness+r.transparency+r.trust)/5))}${'☆'.repeat(5-Math.round((r.accuracy+r.safety+r.helpfulness+r.transparency+r.trust)/5))}</div><span class="text-xs text-gray-500">${r.user_name || 'Anonymous'}</span></div>${r.review?`<p class="text-gray-400 text-sm mt-1">"${r.review}"</p>`:''}</div>`).join('') : '<p class="text-gray-500 text-sm py-4">No reviews yet.</p>'}
+    </div>`;
+  openModal('detailModal');
+}
+
+// ── INCIDENTS ────────────────────────────────────
+async function loadStats() {
+  try {
+    const s = await (await fetch(`${API}/incidents/stats`)).json();
+    document.getElementById('totalCount').textContent = s.total_incidents;
+    document.getElementById('criticalCount').textContent = s.critical_incidents;
+    document.getElementById('appsCount').textContent = s.apps_named;
+  } catch {}
+}
+
+async function loadFeed(search='', sev='') {
+  const p = new URLSearchParams();
+  if (search) p.set('search', search);
+  if (sev) p.set('severity', sev);
+  try {
+    const items = await (await fetch(`${API}/incidents?${p}`)).json();
+    renderFeed(items);
+  } catch {
+    document.getElementById('incidentFeed').innerHTML = '<p class="text-gray-500 text-center py-12">Could not load incidents. Is server running?</p>';
+  }
+}
+
+function renderFeed(items) {
+  const SEV = { critical:'text-red-400', high:'text-orange-400', medium:'text-yellow-400', low:'text-gray-400' };
+  const DOT = { critical:'bg-red-500', high:'bg-orange-500', medium:'bg-yellow-400', low:'bg-gray-500' };
+  const feed = document.getElementById('incidentFeed');
+  if (!items.length) { feed.innerHTML = '<p class="text-gray-500 text-center py-12">No incidents found.</p>'; return; }
+  feed.innerHTML = items.map(i => `
+    <div onclick='showIncidentDetail(${JSON.stringify(i).replace(/'/g,"&#39;")})' class="bg-dark-800 border border-dark-600 p-5 rounded-2xl cursor-pointer hover:border-dark-500 hover:shadow-lg transition-all relative overflow-hidden group">
+      <div class="flex items-center gap-2 mb-2 flex-wrap">
+        <span class="w-2 h-2 rounded-full flex-shrink-0 ${DOT[i.severity]||'bg-gray-500'}"></span>
+        <span class="text-xs font-semibold uppercase tracking-wider ${SEV[i.severity]||'text-gray-400'}">${i.severity}</span>
+        <span class="text-dark-600">·</span>
+        <span class="text-sm font-semibold text-gray-200">${i.app_name}</span>
+        <span class="text-dark-600">·</span>
+        <span class="text-xs text-gray-500">${formatDate(i.incident_date||i.created_at)}</span>
+      </div>
+      <h3 class="font-bold text-lg text-white mb-2">${i.title}</h3>
+      <p class="text-sm text-gray-400 line-clamp-2 leading-relaxed mb-3">${i.description}</p>
+      <div class="flex gap-2 flex-wrap">
+        ${i.category?`<span class="text-[0.65rem] px-2 py-1 uppercase tracking-wider font-semibold rounded-md bg-dark-700 text-gray-400">${i.category.replace(/_/g,' ')}</span>`:''}
+        ${i.region?`<span class="text-[0.65rem] px-2 py-1 uppercase tracking-wider font-semibold rounded-md bg-dark-700 text-gray-400">${i.region}</span>`:''}
+        ${i.source_name?`<span class="text-[0.65rem] px-2 py-1 font-semibold rounded-md text-accent-light bg-accent/10">${i.source_name}</span>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function showIncidentDetail(i) {
+  const SEV = { critical:'text-red-400 bg-red-400', high:'text-orange-400 bg-orange-400', medium:'text-yellow-400 bg-yellow-400', low:'text-gray-400 bg-gray-400' };
+  const [cTxt, cBg] = (SEV[i.severity]||'text-gray-400 bg-gray-400').split(' ');
+  
+  document.getElementById('incDetailContent').innerHTML = `
+    <div class="flex items-center gap-2 mb-3">
+      <span class="w-2 h-2 rounded-full ${cBg}"></span>
+      <span class="text-xs font-semibold uppercase ${cTxt}">${i.severity}</span>
+      <span class="text-gray-600">·</span>
+      <span class="text-sm font-semibold text-gray-200">${i.app_name}</span>
+    </div>
+    <h2 class="text-xl font-bold text-white mb-3">${i.title}</h2>
+    <div class="flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-400 border-b border-dark-600 pb-4 mb-4">
+      <span>📅 ${formatDate(i.incident_date||i.created_at)}</span>
+      ${i.region?`<span>🌍 ${i.region}</span>`:''}
+      ${i.affected_users?`<span>👥 ${i.affected_users}</span>`:''}
+      <span class="ml-auto">Reported by: ${i.user_name || 'Anonymous'}</span>
+    </div>
+    <p class="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">${i.description}</p>
+    ${i.source_url?`
+      <div class="mt-6 bg-dark-700 p-4 rounded-xl border border-dark-600">
+        <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Source Information</div>
+        <a href="${i.source_url}" target="_blank" class="inline-flex items-center gap-1 text-sm text-accent-light hover:underline font-medium">
+          📰 ${i.source_name || 'View original source article'} ↗
+        </a>
+      </div>`:''}`;
+  openModal('incDetailModal');
+}
+
+function filterSev(btn) {
+  document.querySelectorAll('.inc-filter').forEach(b => { b.classList.remove('bg-dark-700','text-accent-light'); b.classList.add('text-gray-400'); });
+  btn.classList.add('bg-dark-700','text-accent-light'); btn.classList.remove('text-gray-400');
+  currentSev = btn.dataset.sev;
+  loadFeed(document.getElementById('incidentSearch').value, currentSev);
+}
+
+// Report Incident Form
+document.getElementById('reportForm').onsubmit = async e => {
+  e.preventDefault();
+  const f = e.target;
+  try {
+    const r = await fetch(`${API}/incidents`, { method:'POST', headers: getAuthHeaders(),
+      body: JSON.stringify({ 
+        app_name:f.app_name.value, title:f.title.value, description:f.description.value,
+        severity:f.severity.value, category:f.category.value, 
+        affected_users:f.affected_users.value||null, region:f.region.value||null, source_url:f.source_url.value||null 
+      }) 
+    });
+    if (r.ok) { closeModal('reportModal'); f.reset(); loadFeed(); loadStats(); toast('✅ Report submitted. We will verify and publish.','bg-emerald-500'); }
+  } catch { toast('Failed to submit','bg-red-500'); }
+};
+
+// ── Shared helpers ───────────────────────────────
+function setStar(el) {
+  const v = +el.dataset.value;
+  el.parentElement.querySelectorAll('.star').forEach((s,i) => { s.classList.toggle('filled', i < v); s.style.color = i < v ? '#ffd600' : ''; });
+  el.parentElement.dataset.selected = v;
+}
+async function submitRating(e, id) {
+  e.preventDefault();
+  const d = {};
+  ['accuracy','safety','helpfulness','transparency','trust'].forEach(f => { d[f] = +(e.target.querySelector(`[data-field="${f}"]`).dataset.selected || 3); });
+  d.review = e.target.querySelector('[name="review"]').value || null;
+  const r = await fetch(`${API}/apps/${id}/rate`, { method:'POST', headers: getAuthHeaders(), body:JSON.stringify(d) });
+  r.ok ? (toast('⭐ Rating submitted!','bg-emerald-500'), closeModal('detailModal'), loadApps()) : toast('Failed','bg-red-500');
+}
+async function submitHarm(e, id) {
+  e.preventDefault();
+  const f = e.target;
+  const r = await fetch(`${API}/apps/${id}/harm`, { method:'POST', headers: getAuthHeaders(),
+    body: JSON.stringify({ severity:+f.severity.value, category:f.category.value, description:f.description.value }) });
+  r.ok ? (toast('🚨 Report submitted','bg-emerald-500'), closeModal('detailModal'), loadApps()) : toast('Failed','bg-red-500');
+}
+document.getElementById('addAppForm').onsubmit = async e => {
+  e.preventDefault();
+  const f = e.target;
+  const r = await fetch(`${API}/apps`, { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ name:f.name.value, url:f.url.value, description:f.description.value, category:f.category.value, is_health:f.is_health.checked }) });
+  r.ok ? (toast('✅ App registered!','bg-emerald-500'), closeModal('addModal'), loadApps(), f.reset()) : toast('Registration Failed','bg-red-500');
+};
+
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
+function switchTab(e, id) {
+  e.target.closest('.flex').querySelectorAll('.tab').forEach(t => { t.classList.replace('text-accent-light','text-gray-500'); t.classList.replace('border-accent','border-transparent'); });
+  e.target.classList.replace('text-gray-500','text-accent-light'); e.target.classList.replace('border-transparent','border-accent');
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+function badgeCls(b) { return {safe:'bg-emerald-500/15 text-emerald-400',caution:'bg-yellow-500/15 text-yellow-400',avoid:'bg-red-500/15 text-red-400',unverified:'bg-gray-500/15 text-gray-400'}[b]||'bg-gray-500/15 text-gray-400'; }
+function scoreCls(s) { return s===null?'text-gray-500':s>=80?'text-emerald-400':s>=50?'text-yellow-400':'text-red-400'; }
+function catIcon(c) { return {health:'🏥',productivity:'⚡',coding:'💻',creative:'🎨',education:'📚',finance:'💰'}[c]||'📦'; }
+function formatDate(d) { if(!d) return ''; return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+function toast(msg, cls) { const t=document.createElement('div'); t.className=`fixed bottom-6 right-6 px-5 py-3 rounded-xl text-white font-medium text-sm shadow-lg z-[200] animate-slideUp ${cls}`; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),3000); }
+
+// Close modals on backdrop click
+document.querySelectorAll('[id$=Modal]').forEach(m => m.onclick = e => { if(e.target===m) closeModal(m.id); });
+
+// Search Event Listeners
+let dt;
+document.getElementById('searchInput').oninput = e => { clearTimeout(dt); dt=setTimeout(()=>loadApps(e.target.value,document.getElementById('categoryFilter').value),300); };
+document.getElementById('categoryFilter').onchange = e => loadApps(document.getElementById('searchInput').value,e.target.value);
+
+let dt2;
+document.getElementById('incidentSearch').oninput = e => { clearTimeout(dt2); dt2=setTimeout(()=>loadFeed(e.target.value,currentSev),300); };
+
+// Init
+loadApps();
+</script>
+</body>
+</html>
