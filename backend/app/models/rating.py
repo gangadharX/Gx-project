@@ -19,7 +19,7 @@ class UserRatingBase(SQLModel):
 class UserRating(UserRatingBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     app_id: int = Field(foreign_key="app.id", index=True)
-    user_id: Optional[int] = Field(default=None, foreign_key="user.id", index=True)
+    user_id: Optional[int] = Field(default=None, foreign_key="users.id", index=True)
     user_name: Optional[str] = None
     user_ip: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)

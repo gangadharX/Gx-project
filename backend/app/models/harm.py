@@ -27,7 +27,7 @@ class HarmReport(SQLModel, table=True):
     prompt_used: Optional[str] = None        # what user asked the app
     app_response: Optional[str] = None       # what app said (the harm)
 
-    user_id: Optional[int] = Field(default=None, foreign_key="user.id", index=True)
+    user_id: Optional[int] = Field(default=None, foreign_key="users.id", index=True)
     user_name: Optional[str] = None
 
     # Moderation

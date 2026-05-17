@@ -55,7 +55,7 @@ class Incident(SQLModel, table=True):
     verified_by: Optional[str] = None
     is_public: bool = True
 
-    user_id: Optional[int] = Field(default=None, foreign_key="user.id", index=True)
+    user_id: Optional[int] = Field(default=None, foreign_key="users.id", index=True)
     user_name: Optional[str] = None
 
     # Dates
