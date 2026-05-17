@@ -23,6 +23,7 @@ async def lifespan(app: FastAPI):
     migrations = [
         "ALTER TABLE userrating ADD COLUMN user_id INTEGER",
         "ALTER TABLE userrating ADD COLUMN user_name VARCHAR",
+        "ALTER TABLE userrating ADD COLUMN photo_url VARCHAR",
         "ALTER TABLE harmreport ADD COLUMN user_id INTEGER",
         "ALTER TABLE harmreport ADD COLUMN user_name VARCHAR",
         "ALTER TABLE incident ADD COLUMN user_id INTEGER",

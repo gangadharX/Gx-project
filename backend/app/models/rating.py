@@ -21,6 +21,7 @@ class UserRating(UserRatingBase, table=True):
     app_id: int = Field(foreign_key="app.id", index=True)
     user_id: Optional[int] = Field(default=None, foreign_key="users.id", index=True)
     user_name: Optional[str] = None
+    photo_url: Optional[str] = None
     user_ip: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -31,10 +32,13 @@ class UserRating(UserRatingBase, table=True):
 
 
 class UserRatingCreate(UserRatingBase):
-    pass
+    photo_url: Optional[str] = None
 
 
 class UserRatingRead(UserRatingBase):
     id: int
     app_id: int
+    user_id: Optional[int] = None
+    user_name: Optional[str] = None
+    photo_url: Optional[str] = None
     created_at: datetime

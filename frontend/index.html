@@ -389,7 +389,11 @@ async function openDetail(id) {
         ${['accuracy','safety','helpfulness','transparency','trust'].map(d=>`
           <div><label class="text-xs text-gray-500 font-medium">${d[0].toUpperCase()+d.slice(1)}</label>
           <div class="flex gap-1 mt-1" data-field="${d}">${[1,2,3,4,5].map(i=>`<span class="star text-xl text-dark-600" data-value="${i}" onclick="setStar(this)">★</span>`).join('')}</div></div>`).join('')}
-        <textarea name="review" rows="2" placeholder="Review (optional)" class="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-xl text-gray-200 text-sm outline-none resize-none focus:border-accent"></textarea>
+        <textarea name="review" rows="2" placeholder="Share your experience... (optional)" class="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-xl text-gray-200 text-sm outline-none resize-none focus:border-accent"></textarea>
+        <div>
+          <label class="text-xs text-gray-500 font-medium mb-1 block">📷 Add Photo (optional)</label>
+          <input type="url" name="photo_url" placeholder="Paste image URL (e.g. imgur link)" class="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-xl text-gray-200 text-sm outline-none focus:border-accent">
+        </div>
         <button type="submit" class="w-full py-2 rounded-xl bg-gradient-to-r from-accent to-accent-light text-white font-semibold text-sm">Submit Rating</button>
       </form>
     </div>
@@ -406,7 +410,30 @@ async function openDetail(id) {
       </form>
     </div>
     <div id="reviewsTab" class="tab-panel hidden">
-      ${ratings.length ? ratings.map(r=>`<div class="bg-dark-700 rounded-xl p-3 mb-2"><div class="flex items-center justify-between"><div class="text-yellow-400 text-sm">${'★'.repeat(Math.round((r.accuracy+r.safety+r.helpfulness+r.transparency+r.trust)/5))}${'☆'.repeat(5-Math.round((r.accuracy+r.safety+r.helpfulness+r.transparency+r.trust)/5))}</div><span class="text-xs text-gray-500">${r.user_name || 'Anonymous'}</span></div>${r.review?`<p class="text-gray-400 text-sm mt-1">"${r.review}"</p>`:''}</div>`).join('') : '<p class="text-gray-500 text-sm py-4">No reviews yet.</p>'}
+      ${(function(){
+        if(!ratings.length) return '<p class="text-gray-500 text-sm py-4 text-center">No reviews yet. Be the first to review!</p>';
+        var avgAll = ratings.reduce(function(s,r){return s+(r.accuracy+r.safety+r.helpfulness+r.transparency+r.trust)/5;},0)/ratings.length;
+        var starCounts = [0,0,0,0,0];
+        ratings.forEach(function(r){var avg=Math.round((r.accuracy+r.safety+r.helpfulness+r.transparency+r.trust)/5); starCounts[avg-1]++;});
+        var summaryHtml = '<div class="bg-dark-700 rounded-xl p-4 mb-4"><div class="flex items-center gap-4"><div class="text-center"><div class="text-3xl font-bold text-white">'+avgAll.toFixed(1)+'</div><div class="text-yellow-400 text-sm">'+'★'.repeat(Math.round(avgAll))+'☆'.repeat(5-Math.round(avgAll))+'</div><div class="text-xs text-gray-500 mt-1">'+ratings.length+' rating'+(ratings.length>1?'s':'')+'</div></div><div class="flex-1 space-y-1">';
+        [5,4,3,2,1].forEach(function(s){
+          var pct = ratings.length ? (starCounts[s-1]/ratings.length*100) : 0;
+          summaryHtml += '<div class="flex items-center gap-2 text-xs"><span class="text-gray-400 w-3">'+s+'</span><span class="text-yellow-400">★</span><div class="flex-1 bg-dark-600 rounded-full h-2 overflow-hidden"><div class="bg-yellow-400 h-full rounded-full" style="width:'+pct+'%"></div></div><span class="text-gray-500 w-6 text-right">'+starCounts[s-1]+'</span></div>';
+        });
+        summaryHtml += '</div></div></div>';
+        var reviewsHtml = '<div class="space-y-3">';
+        ratings.forEach(function(r){
+          var avg = Math.round((r.accuracy+r.safety+r.helpfulness+r.transparency+r.trust)/5);
+          var name = r.user_name || 'Anonymous';
+          var initials = name.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+          var colors = ['bg-purple-500','bg-emerald-500','bg-blue-500','bg-pink-500','bg-orange-500'];
+          var color = colors[name.length % colors.length];
+          var timeStr = getTimeAgo(r.created_at);
+          reviewsHtml += '<div class="bg-dark-700 rounded-xl p-4"><div class="flex items-start gap-3"><div class="'+color+' w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">'+initials+'</div><div class="flex-1 min-w-0"><div class="flex items-center gap-2 flex-wrap"><span class="font-semibold text-sm text-white">'+name+'</span><span class="text-[0.65rem] text-gray-500">'+timeStr+'</span></div><div class="text-yellow-400 text-sm mt-0.5">'+'★'.repeat(avg)+'☆'.repeat(5-avg)+'</div><div class="flex gap-3 mt-1 text-[0.6rem] text-gray-500"><span>Accuracy:'+r.accuracy+'★</span><span>Safety:'+r.safety+'★</span><span>Help:'+r.helpfulness+'★</span><span>Trust:'+r.trust+'★</span></div>'+(r.review ? '<p class="text-gray-300 text-sm mt-2 leading-relaxed">'+r.review+'</p>' : '')+(r.photo_url ? '<img src="'+r.photo_url+'" class="mt-2 rounded-lg max-h-48 border border-dark-600 cursor-pointer hover:opacity-80 transition" onclick="window.open(this.src)" alt="Review photo">' : '')+'</div></div></div>';
+        });
+        reviewsHtml += '</div>';
+        return summaryHtml + reviewsHtml;
+      })()}
     </div>`;
   openModal('detailModal');
 }
@@ -521,6 +548,7 @@ async function submitRating(e, id) {
   const d = {};
   ['accuracy','safety','helpfulness','transparency','trust'].forEach(f => { d[f] = +(e.target.querySelector(`[data-field="${f}"]`).dataset.selected || 3); });
   d.review = e.target.querySelector('[name="review"]').value || null;
+  d.photo_url = e.target.querySelector('[name="photo_url"]').value || null;
   const r = await fetch(`${API}/apps/${id}/rate`, { method:'POST', headers: getAuthHeaders(), body:JSON.stringify(d) });
   r.ok ? (toast('⭐ Rating submitted!','bg-emerald-500'), closeModal('detailModal'), loadApps()) : toast('Failed','bg-red-500');
 }
@@ -551,6 +579,7 @@ function badgeCls(b) { return {safe:'bg-emerald-500/15 text-emerald-400',caution
 function scoreCls(s) { return s===null?'text-gray-500':s>=80?'text-emerald-400':s>=50?'text-yellow-400':'text-red-400'; }
 function catIcon(c) { return {health:'🏥',productivity:'⚡',coding:'💻',creative:'🎨',education:'📚',finance:'💰'}[c]||'📦'; }
 function formatDate(d) { if(!d) return ''; return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+function getTimeAgo(d) { if(!d) return ''; const s=Math.floor((Date.now()-new Date(d))/1000); if(s<60) return 'just now'; if(s<3600) return Math.floor(s/60)+'m ago'; if(s<86400) return Math.floor(s/3600)+'h ago'; if(s<2592000) return Math.floor(s/86400)+'d ago'; return formatDate(d); }
 function toast(msg, cls) { const t=document.createElement('div'); t.className=`fixed bottom-6 right-6 px-5 py-3 rounded-xl text-white font-medium text-sm shadow-lg z-[200] animate-slideUp ${cls}`; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),3000); }
 
 // Close modals on backdrop click
